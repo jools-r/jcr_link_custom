@@ -105,14 +105,15 @@ class jcr_link_custom
        switch ($step) {
            case 'enabled':
                add_privs('prefs.jcr_link_custom', '1');
-               
+
                $debug = false;
-               
+
                // Migrate v1 plugin legacy column
                $legacy = safe_query("SHOW COLUMNS FROM ".safe_pfx('txp_link')." LIKE 'jcr_link_custom'", $debug);
-               if ($legacy) {
+
+               if (@mysqli_num_rows($legacy) > 0) {
                    // Copy contents of jcr_link_custom to jcr_link_custom_1
-                   safe_update('txp_link', "`jcr_link_custom` = `jcr_link_custom_1`", "1 = 1", $debug);
+                   safe_update('txp_link', "`jcr_link_custom_1` = `jcr_link_custom`", "1=1", $debug);
                    // Delete jcr_link_custom column
                    safe_alter('txp_link', "DROP COLUMN `jcr_link_custom`", $debug);
                }
