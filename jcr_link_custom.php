@@ -347,6 +347,10 @@ function jcr_link_custom($atts)
 		$thing = $currentlink[$name] !== '' ? $currentlink[$name] : $default;
 	}
 
+	if (empty($thing)) {
+		return;
+	}
+
 	if ($escape === null) {
 		if(function_exists('txp_escape')) {
 			$thing = txp_escape(array('escape' => $escape), $thing);
