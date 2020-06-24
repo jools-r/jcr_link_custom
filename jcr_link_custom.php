@@ -201,7 +201,7 @@ class jcr_link_custom
 	 */
 	public static function save($event, $step)
 	{
-		extract(doSlash(psa(array('jcr_link_custom_1', 'jcr_link_custom_2', 'jcr_link_custom_3', 'jcr_link_custom_4', 'jcr_link_custom_5', 'name'))));
+		extract(doSlash(psa(array('jcr_link_custom_1', 'jcr_link_custom_2', 'jcr_link_custom_3', 'jcr_link_custom_4', 'jcr_link_custom_5', 'id'))));
 		$id = assert_int($id);
 		safe_update('txp_link',"
             jcr_link_custom_1 = '$jcr_link_custom_1',
