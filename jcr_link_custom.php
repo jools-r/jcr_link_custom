@@ -17,7 +17,7 @@ $plugin['name'] = 'jcr_link_custom';
 // 1 = Plugin help is in raw HTML.  Not recommended.
 # $plugin['allow_html_help'] = 1;
 
-$plugin['version'] = '0.2.1';
+$plugin['version'] = '0.2.2';
 $plugin['author'] = 'jcr / txpbuilders';
 $plugin['author_uri'] = 'http://txp.builders';
 $plugin['description'] = 'Adds multiple custom fields to the links panel';
@@ -54,6 +54,7 @@ $plugin['flags'] = '3';
 // #@language ISO-LANGUAGE-CODE
 // abc_string_name => Localized String
 
+// Customise the custom field display name as follows:
 // jcr_link_custom_1 => Image ID
 // jcr_link_custom_2 => Link status
 // jcr_link_custom_3 => Page title
@@ -72,7 +73,7 @@ EOT;
 // End of textpack
 
 if (!defined('txpinterface'))
-        @include_once('zem_tpl.php');
+		@include_once('zem_tpl.php');
 
 # --- BEGIN PLUGIN CODE ---
 class jcr_link_custom
@@ -85,7 +86,7 @@ class jcr_link_custom
 		register_callback(array(__CLASS__, 'lifecycle'), 'plugin_lifecycle.jcr_link_custom');
 		register_callback(array(__CLASS__, 'ui'), 'link_ui', 'extend_detail_form');
 		register_callback(array(__CLASS__, 'save'), 'link', 'link_save');
-        
+
 		// Prefs pane for custom fields
 		add_privs('prefs.jcr_link_custom', '1');
 
@@ -102,59 +103,82 @@ class jcr_link_custom
    */
    public static function lifecycle($event, $step)
    {
-       switch ($step) {
-           case 'enabled':
-               add_privs('prefs.jcr_link_custom', '1');
+		switch ($step) {
+			case 'enabled':
+				add_privs('prefs.jcr_link_custom', '1');
+				break;
+			case 'disabled':
+				break;
+			case 'installed':
+				// Add link custom fields to txp_link table
+				$cols_exist = safe_query("SHOW COLUMNS FROM ".safe_pfx('txp_link')." LIKE 'jcr_link_custom_1'");
+				if (@numRows($cols_exist) == 0) {
+					safe_alter(
+						'txp_link',
+						"ADD COLUMN jcr_link_custom_1 VARCHAR(255) NOT NULL DEFAULT '' AFTER author,
+						 ADD COLUMN jcr_link_custom_2 VARCHAR(255) NOT NULL DEFAULT '' AFTER jcr_link_custom_1,
+						 ADD COLUMN jcr_link_custom_3 VARCHAR(255) NOT NULL DEFAULT '' AFTER jcr_link_custom_2,
+						 ADD COLUMN jcr_link_custom_4 VARCHAR(255) NOT NULL DEFAULT '' AFTER jcr_link_custom_3,
+						 ADD COLUMN jcr_link_custom_5 VARCHAR(255) NOT NULL DEFAULT '' AFTER jcr_link_custom_4"
+					);
+				}
 
-               $debug = false;
+				// Add prefs for link custom field names
+				create_pref("link_custom_1_set", "", "jcr_link_custom", "0", "link_custom_set", "1");
+				create_pref("link_custom_2_set", "", "jcr_link_custom", "0", "link_custom_set", "2");
+				create_pref("link_custom_3_set", "", "jcr_link_custom", "0", "link_custom_set", "3");
+				create_pref("link_custom_4_set", "", "jcr_link_custom", "0", "link_custom_set", "4");
+				create_pref("link_custom_5_set", "", "jcr_link_custom", "0", "link_custom_set", "5");
 
-               // Migrate v1 plugin legacy column
-               $legacy = safe_query("SHOW COLUMNS FROM ".safe_pfx('txp_link')." LIKE 'jcr_link_custom'", $debug);
+				// Insert initial value for cf1 if none already exists (so that upgrade works)
+				$cf_pref = get_pref('link_custom_1_set');
+				if ($cf_pref === '') {
+					set_pref('link_custom_1_set','custom1');
+				}
 
-               if (@mysqli_num_rows($legacy) > 0) {
-                   // Copy contents of jcr_link_custom to jcr_link_custom_1
-                   safe_update('txp_link', "`jcr_link_custom_1` = `jcr_link_custom`", "1=1", $debug);
-                   // Delete jcr_link_custom column
-                   safe_alter('txp_link', "DROP COLUMN `jcr_link_custom`", $debug);
-               }
-               break;
-           case 'disabled':
-               break;
-           case 'installed':
-               // Add link custom fields to txp_link table
-               safe_alter(
-                   'txp_link',
-                   "ADD COLUMN jcr_link_custom_1 VARCHAR(255) NOT NULL DEFAULT '' AFTER author,
-                    ADD COLUMN jcr_link_custom_2 VARCHAR(255) NOT NULL DEFAULT '' AFTER jcr_link_custom_1,
-                    ADD COLUMN jcr_link_custom_3 VARCHAR(255) NOT NULL DEFAULT '' AFTER jcr_link_custom_2,
-                    ADD COLUMN jcr_link_custom_4 VARCHAR(255) NOT NULL DEFAULT '' AFTER jcr_link_custom_3,
-                    ADD COLUMN jcr_link_custom_5 VARCHAR(255) NOT NULL DEFAULT '' AFTER jcr_link_custom_4"
-               );
+				// Migrate v1 plugin legacy column
+				$legacy = safe_query("SHOW COLUMNS FROM ".safe_pfx('txp_link')." LIKE 'jcr_link_custom'");
+				if (@numRows($legacy) > 0) {
+					// Copy contents of jcr_link_custom to jcr_link_custom_1
+					safe_update('txp_link', "`jcr_link_custom_1` = `jcr_link_custom`", "1=1");
+					// Delete jcr_link_custom column
+					safe_alter('txp_link', "DROP COLUMN `jcr_link_custom`");
+				}
 
-               // Add prefs for link custom field names
-               create_pref("link_custom_1_set", "", "jcr_link_custom", "0", "link_custom_set", "1");
-               create_pref("link_custom_2_set", "", "jcr_link_custom", "0", "link_custom_set", "2");
-               create_pref("link_custom_3_set", "", "jcr_link_custom", "0", "link_custom_set", "3");
-               create_pref("link_custom_4_set", "", "jcr_link_custom", "0", "link_custom_set", "4");
-               create_pref("link_custom_5_set", "", "jcr_link_custom", "0", "link_custom_set", "5");
-               break;
-           case 'deleted':
-               // Remove columns from link table
-               safe_alter(
-                   'txp_link',
-                   'DROP COLUMN jcr_link_custom_1,
-                    DROP COLUMN jcr_link_custom_2,
-                    DROP COLUMN jcr_link_custom_3,
-                    DROP COLUMN jcr_link_custom_4,
-                    DROP COLUMN jcr_link_custom_5'
-               );
-               // Remove all prefs from event 'jcr_link_custom'.
-               remove_pref(null,"jcr_link_custom");
-               break;
-       }
-       return;
+				// Migrate from NULL to '' default value
+			 $has_nulls = safe_rows_start("*", 'txp_link', "`jcr_link_custom_1` IS NULL OR `jcr_link_custom_2` IS NULL OR `jcr_link_custom_3` IS NULL OR `jcr_link_custom_4` IS NULL OR `jcr_link_custom_5` IS NULL");
+			 if (@numRows($has_nulls) > 0) {
+				 safe_update('txp_link', "jcr_link_custom_1 = ''", "jcr_link_custom_1 IS NULL");
+				 safe_update('txp_link', "jcr_link_custom_2 = ''", "jcr_link_custom_2 IS NULL");
+				 safe_update('txp_link', "jcr_link_custom_3 = ''", "jcr_link_custom_3 IS NULL");
+				 safe_update('txp_link', "jcr_link_custom_4 = ''", "jcr_link_custom_4 IS NULL");
+				 safe_update('txp_link', "jcr_link_custom_5 = ''", "jcr_link_custom_5 IS NULL");
+				 safe_alter(
+					 'txp_link', 
+					 "MODIFY jcr_link_custom_1  VARCHAR(255) NOT NULL DEFAULT '',
+					  MODIFY jcr_link_custom_2  VARCHAR(255) NOT NULL DEFAULT '',
+					  MODIFY jcr_link_custom_3  VARCHAR(255) NOT NULL DEFAULT '',
+					  MODIFY jcr_link_custom_4  VARCHAR(255) NOT NULL DEFAULT '',
+					  MODIFY jcr_link_custom_5  VARCHAR(255) NOT NULL DEFAULT ''"
+				 );
+			 }
+				break;
+			case 'deleted':
+				// Remove columns from link table
+				safe_alter(
+					'txp_link',
+					'DROP COLUMN jcr_link_custom_1,
+					 DROP COLUMN jcr_link_custom_2,
+					 DROP COLUMN jcr_link_custom_3,
+					 DROP COLUMN jcr_link_custom_4,
+					 DROP COLUMN jcr_link_custom_5'
+				);
+				// Remove all prefs from event 'jcr_link_custom'.
+				remove_pref(null,"jcr_link_custom");
+				break;
+		}
+		return;
    }
-
 
 	/**
 	 * Paint additional fields for link custom field
@@ -167,7 +191,7 @@ class jcr_link_custom
 	 */
 	public static function ui($event, $step, $dummy, $rs)
 	{
-        global $prefs;
+		global $prefs;
 
 		extract(lAtts(array(
 			'jcr_link_custom_1' => '',
@@ -204,15 +228,15 @@ class jcr_link_custom
 		extract(doSlash(psa(array('jcr_link_custom_1', 'jcr_link_custom_2', 'jcr_link_custom_3', 'jcr_link_custom_4', 'jcr_link_custom_5', 'id'))));
 		$id = assert_int($id);
 		safe_update('txp_link',"
-            jcr_link_custom_1 = '$jcr_link_custom_1',
-            jcr_link_custom_2 = '$jcr_link_custom_2',
-            jcr_link_custom_3 = '$jcr_link_custom_3',
-            jcr_link_custom_4 = '$jcr_link_custom_4',
-            jcr_link_custom_5 = '$jcr_link_custom_5'",
+			jcr_link_custom_1 = '$jcr_link_custom_1',
+			jcr_link_custom_2 = '$jcr_link_custom_2',
+			jcr_link_custom_3 = '$jcr_link_custom_3',
+			jcr_link_custom_4 = '$jcr_link_custom_4',
+			jcr_link_custom_5 = '$jcr_link_custom_5'",
 			"id = $id"
 		);
 	}
-    
+
 	/**
 	 * Renders a HTML link custom field.
 	 *
@@ -242,15 +266,15 @@ class jcr_link_custom
 
 if (txpinterface === 'admin') {
 
-    new jcr_link_custom;
+	new jcr_link_custom;
 
 } elseif (txpinterface === 'public') {
 
-    if (class_exists('\Textpattern\Tag\Registry')) {
-        Txp::get('\Textpattern\Tag\Registry')
-            ->register('jcr_link_custom')
+	if (class_exists('\Textpattern\Tag\Registry')) {
+		Txp::get('\Textpattern\Tag\Registry')
+			->register('jcr_link_custom')
 			->register('jcr_if_link_custom');
-    }
+	}
 
 }
 
@@ -331,7 +355,7 @@ function jcr_link_custom($atts, $thing = null)
 		"id = '".$current_link."'"
 	);
 
-    if($rs) {
+	if($rs) {
 		while ($row = nextRow($rs)) {
 			// Populate link custom field data;
 			foreach (jcr_link_column_map() as $key => $column) {
@@ -349,11 +373,10 @@ function jcr_link_custom($atts, $thing = null)
 		$thing = $currentlink[$name] !== '' ? $currentlink[$name] : $default;
 	}
 
-    $thing = ($escape === null ? txpspecialchars($thing) : parse($thing));
+	$thing = ($escape === null ? txpspecialchars($thing) : parse($thing));
 
 	return !empty($thing) ? doTag($thing, $wraptag, $class) : '';
 }
-
 
 /**
  * Public tag: Check if custom link field exists
@@ -383,12 +406,12 @@ function jcr_if_link_custom($atts, $thing = null)
 
 	$name = strtolower($name);
 
-    $rs = safe_rows_start("*",
+	$rs = safe_rows_start("*",
 		'txp_link',
 		"id = '".$current_link."'"
 	);
 
-    if($rs) {
+	if($rs) {
 		while ($row = nextRow($rs)) {
 			// Populate links custom field data;
 			foreach (jcr_link_column_map() as $key => $column) {
@@ -425,7 +448,6 @@ h1. jcr_link_custom
 
 Adds up to five extra custom fields of up to 255 characters to the "Content › Links":http://docs.textpattern.io/administration/links-panel panel and provides a corresponding tag to output the custom field.
 
-
 h2. Use cases
 
 Use whenever extra information needs to be stored with a link. For example:
@@ -434,11 +456,9 @@ Use whenever extra information needs to be stored with a link. For example:
 * Store associated details, for example the location of a linked organisation.
 * …
 
-
 h2. Installation
 
 Paste the code into the  _Admin › Plugins_ panel, install and enable the plugin.
-
 
 h2. Tags
 
@@ -492,21 +512,19 @@ Default: exact.
 Item separator for match="any" or "all". Otherwise ignored
 Default: empty.
 
-
 h2. Example
 
 Produce a list of linked partner logos (from link assigned to the link category "partners"):
 
 bc. <txp:linklist wraptag="ul" break="li" category="partners">
-    <txp:jcr_if_link_custom name="image_id" value="">
-        <a href="<txp:link_url />" title="<txp:link_name />"><txp:link_name /></a>
-    <txp:else />
-        <a href="<txp:link_url />" title="<txp:link_name />"><txp:image id='<txp:jcr_link_custom name="image_id" />' limit="1" /></a>
-    </txp:jcr_if_link_custom>
+	<txp:jcr_if_link_custom name="image_id" value="">
+		<a href="<txp:link_url />" title="<txp:link_name />"><txp:link_name /></a>
+	<txp:else />
+		<a href="<txp:link_url />" title="<txp:link_name />"><txp:image id='<txp:jcr_link_custom name="image_id" />' limit="1" /></a>
+	</txp:jcr_if_link_custom>
 </txp:linklist>
 
 p. when the "image_id" link custom field is used to store the Image ID# of the logo.
-
 
 h2. Changing the label of the custom field
 
@@ -519,21 +537,19 @@ jcr_link_custom_2 => Your other label
 
 p. replacing @en-gb@ with your own language and @Your label@ with your own desired label.
 
-
 h2. De-installation
 
 The plugin cleans up after itself: deinstalling the plugin removes the extra column from the database. To stop using the plugin but keep the database tables, just disable (deactivate) the plugin but don't delete it.
-
 
 h2. Changelog + Credits
 
 h3. Changelog
 
+* Version 0.2.2 – 2020/06/27 – Handle migration from previous versions of the plugin on install
 * Version 0.2.1 – 2020/06/27 – Fix for missing custom_field name vs. missing value for cf
 * Version 0.2 – 2020/06/23 – Expand to handle multiple custom fields + migrate from v1
 * Version 0.1.1 – 2016/12/0518 – Remedy table not being created on install 
 * Version 0.1 – 2016/03/04 – First release
-
 
 h3. Credits
 
