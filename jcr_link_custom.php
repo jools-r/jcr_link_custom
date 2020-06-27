@@ -17,7 +17,7 @@ $plugin['name'] = 'jcr_link_custom';
 // 1 = Plugin help is in raw HTML.  Not recommended.
 # $plugin['allow_html_help'] = 1;
 
-$plugin['version'] = '0.2';
+$plugin['version'] = '0.2.1';
 $plugin['author'] = 'jcr / txpbuilders';
 $plugin['author_uri'] = 'http://txp.builders';
 $plugin['description'] = 'Adds multiple custom fields to the links panel';
@@ -124,11 +124,11 @@ class jcr_link_custom
                // Add link custom fields to txp_link table
                safe_alter(
                    'txp_link',
-                   'ADD COLUMN jcr_link_custom_1 VARCHAR(255) NULL AFTER author,
-                    ADD COLUMN jcr_link_custom_2 VARCHAR(255) NULL AFTER jcr_link_custom_1,
-                    ADD COLUMN jcr_link_custom_3 VARCHAR(255) NULL AFTER jcr_link_custom_2,
-                    ADD COLUMN jcr_link_custom_4 VARCHAR(255) NULL AFTER jcr_link_custom_3,
-                    ADD COLUMN jcr_link_custom_5 VARCHAR(255) NULL AFTER jcr_link_custom_4'
+                   "ADD COLUMN jcr_link_custom_1 VARCHAR(255) NOT NULL DEFAULT '' AFTER author,
+                    ADD COLUMN jcr_link_custom_2 VARCHAR(255) NOT NULL DEFAULT '' AFTER jcr_link_custom_1,
+                    ADD COLUMN jcr_link_custom_3 VARCHAR(255) NOT NULL DEFAULT '' AFTER jcr_link_custom_2,
+                    ADD COLUMN jcr_link_custom_4 VARCHAR(255) NOT NULL DEFAULT '' AFTER jcr_link_custom_3,
+                    ADD COLUMN jcr_link_custom_5 VARCHAR(255) NOT NULL DEFAULT '' AFTER jcr_link_custom_4"
                );
 
                // Add prefs for link custom field names
@@ -308,7 +308,7 @@ function jcr_link_column_map()
  *        <txp:jcr_link_custom name="image_id" escape="html" />
  * </code>
  */
-function jcr_link_custom($atts)
+function jcr_link_custom($atts, $thing = null)
 {
 	global $thislink;
 
@@ -326,10 +326,12 @@ function jcr_link_custom($atts)
 
 	$name = strtolower($name);
 
-	if ($rs = safe_rows_start("*",
+	$rs = safe_rows_start("*",
 		'txp_link',
 		"id = '".$current_link."'"
-	)) {
+	);
+
+    if($rs) {
 		while ($row = nextRow($rs)) {
 			// Populate link custom field data;
 			foreach (jcr_link_column_map() as $key => $column) {
@@ -347,21 +349,9 @@ function jcr_link_custom($atts)
 		$thing = $currentlink[$name] !== '' ? $currentlink[$name] : $default;
 	}
 
-	if (empty($thing)) {
-		return;
-	}
+    $thing = ($escape === null ? txpspecialchars($thing) : parse($thing));
 
-	if ($escape === null) {
-		if(function_exists('txp_escape')) {
-			$thing = txp_escape(array('escape' => $escape), $thing);
-		} else {
-			$thing = txpspecialchars($thing);
-		}    
-	} else {
-		$thing = parse($thing);
-	}
-
-	return doTag($thing, $wraptag, $class);
+	return !empty($thing) ? doTag($thing, $wraptag, $class) : '';
 }
 
 
@@ -393,10 +383,12 @@ function jcr_if_link_custom($atts, $thing = null)
 
 	$name = strtolower($name);
 
-	if ($rs = safe_rows_start("*",
+    $rs = safe_rows_start("*",
 		'txp_link',
 		"id = '".$current_link."'"
-	)) {
+	);
+
+    if($rs) {
 		while ($row = nextRow($rs)) {
 			// Populate links custom field data;
 			foreach (jcr_link_column_map() as $key => $column) {
@@ -537,6 +529,7 @@ h2. Changelog + Credits
 
 h3. Changelog
 
+* Version 0.2.1 – 2020/06/27 – Fix for missing custom_field name vs. missing value for cf
 * Version 0.2 – 2020/06/23 – Expand to handle multiple custom fields + migrate from v1
 * Version 0.1.1 – 2016/12/0518 – Remedy table not being created on install 
 * Version 0.1 – 2016/03/04 – First release
