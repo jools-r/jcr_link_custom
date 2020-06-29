@@ -17,7 +17,7 @@ $plugin['name'] = 'jcr_link_custom';
 // 1 = Plugin help is in raw HTML.  Not recommended.
 # $plugin['allow_html_help'] = 1;
 
-$plugin['version'] = '0.2.2';
+$plugin['version'] = '0.2.3';
 $plugin['author'] = 'jcr / txpbuilders';
 $plugin['author_uri'] = 'http://txp.builders';
 $plugin['description'] = 'Adds multiple custom fields to the links panel';
@@ -53,7 +53,6 @@ $plugin['flags'] = '3';
 // #@event
 // #@language ISO-LANGUAGE-CODE
 // abc_string_name => Localized String
-
 // Customise the custom field display name as follows:
 // jcr_link_custom_1 => Image ID
 // jcr_link_custom_2 => Link status
@@ -62,13 +61,13 @@ $plugin['flags'] = '3';
 // jcr_link_custom_5 => Background color
 
 $plugin['textpack'] = <<< EOT
-#@admin
-#@language en-gb
+#@owner jcr_link_custom
+#@language en, en-gb, en-us
+#@admin-side
 jcr_link_custom => Link custom fields
-
-#@language de-de
+#@language de
+#@admin-side
 jcr_link_custom => Link Custom-Felder
-
 EOT;
 // End of textpack
 
@@ -268,15 +267,12 @@ if (txpinterface === 'admin') {
 
 	new jcr_link_custom;
 
-} elseif (txpinterface === 'public') {
-
-	if (class_exists('\Textpattern\Tag\Registry')) {
-		Txp::get('\Textpattern\Tag\Registry')
-			->register('jcr_link_custom')
-			->register('jcr_if_link_custom');
-	}
-
 }
+
+// Register user-callable plugin tags
+Txp::get('\Textpattern\Tag\Registry')
+	->register('jcr_link_custom')
+	->register('jcr_if_link_custom');
 
 /**
  * Gets a list of link custom fields.
@@ -545,6 +541,7 @@ h2. Changelog + Credits
 
 h3. Changelog
 
+* Version 0.2.3 – 2020/06/29 – Tag registration + textpack fixes
 * Version 0.2.2 – 2020/06/27 – Handle migration from previous versions of the plugin on install
 * Version 0.2.1 – 2020/06/27 – Fix for missing custom_field name vs. missing value for cf
 * Version 0.2 – 2020/06/23 – Expand to handle multiple custom fields + migrate from v1
