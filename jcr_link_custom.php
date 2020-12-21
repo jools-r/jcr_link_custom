@@ -96,7 +96,7 @@ class jcr_link_custom
     /**
      * Initialise.
      */
-     function __construct()
+    function __construct()
     {
         // Hook into the system's callbacks
         register_callback(array(__CLASS__, "lifecycle"), "plugin_lifecycle.jcr_link_custom");
@@ -164,23 +164,23 @@ class jcr_link_custom
                     safe_update("txp_lang", "data = 'Link Custom-Felder', owner = 'jcr_link_custom'", "name = 'jcr_link_custom' AND lang = 'de'");
                 }
 
-                // Migrate from NULL to '' default value
-             $has_nulls = safe_rows_start("*", "txp_link", "`jcr_link_custom_1` IS NULL OR `jcr_link_custom_2` IS NULL OR `jcr_link_custom_3` IS NULL OR `jcr_link_custom_4` IS NULL OR `jcr_link_custom_5` IS NULL");
-             if (@numRows($has_nulls) > 0) {
-                 safe_update("txp_link", "jcr_link_custom_1 = ''", "jcr_link_custom_1 IS NULL");
-                 safe_update("txp_link", "jcr_link_custom_2 = ''", "jcr_link_custom_2 IS NULL");
-                 safe_update("txp_link", "jcr_link_custom_3 = ''", "jcr_link_custom_3 IS NULL");
-                 safe_update("txp_link", "jcr_link_custom_4 = ''", "jcr_link_custom_4 IS NULL");
-                 safe_update("txp_link", "jcr_link_custom_5 = ''", "jcr_link_custom_5 IS NULL");
-                 safe_alter(
-                     "txp_link",
-                     "MODIFY jcr_link_custom_1  VARCHAR(255) NOT NULL DEFAULT '',
-                      MODIFY jcr_link_custom_2  VARCHAR(255) NOT NULL DEFAULT '',
-                      MODIFY jcr_link_custom_3  VARCHAR(255) NOT NULL DEFAULT '',
-                      MODIFY jcr_link_custom_4  VARCHAR(255) NOT NULL DEFAULT '',
-                      MODIFY jcr_link_custom_5  VARCHAR(255) NOT NULL DEFAULT ''"
-                 );
-             }
+                // Upgrade: Migrate from NULL to '' default value
+                $has_nulls = safe_rows_start("*", "txp_link","`jcr_link_custom_1` IS NULL OR `jcr_link_custom_2` IS NULLOR `jcr_link_custom_3` IS NULL OR `jcr_link_custom_4` ISNULL OR `jcr_link_custom_5` IS NULL");
+                if (@numRows($has_nulls) > 0) {
+                    safe_update("txp_link", "jcr_link_custom_1 = ''", "jcr_link_custom_1 IS NULL");
+                    safe_update("txp_link", "jcr_link_custom_2 = ''", "jcr_link_custom_2 IS NULL");
+                    safe_update("txp_link", "jcr_link_custom_3 = ''", "jcr_link_custom_3 IS NULL");
+                    safe_update("txp_link", "jcr_link_custom_4 = ''", "jcr_link_custom_4 IS NULL");
+                    safe_update("txp_link", "jcr_link_custom_5 = ''", "jcr_link_custom_5 IS NULL");
+                    safe_alter(
+                        "txp_link",
+                        "MODIFY jcr_link_custom_1  VARCHAR(255) NOT NULL DEFAULT '',
+                         MODIFY jcr_link_custom_2  VARCHAR(255) NOT NULL DEFAULT '',
+                         MODIFY jcr_link_custom_3  VARCHAR(255) NOT NULL DEFAULT '',
+                         MODIFY jcr_link_custom_4  VARCHAR(255) NOT NULL DEFAULT '',
+                         MODIFY jcr_link_custom_5  VARCHAR(255) NOT NULL DEFAULT ''"
+                    );
+                }
                 break;
             case "deleted":
                 // Remove columns from link table
@@ -518,7 +518,7 @@ If not specified, the tag tests for the existence of any value in the specified 
 Example: Use @value="english"@ to output only those links whose “language” link custom field is english. Default: none.
 
 @match@
-Match testing: exact, any, all, pattern. See the docs for “if_custom_field”:https://docs.textpattern.com/tags/if_custom_field.
+Match testing: exact, any, all, pattern. See the docs for "if_custom_field":https://docs.textpattern.com/tags/if_custom_field.
 Default: exact.
 
 @separator@
