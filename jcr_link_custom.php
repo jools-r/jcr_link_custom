@@ -17,7 +17,7 @@ $plugin["name"] = "jcr_link_custom";
 // 1 = Plugin help is in raw HTML.  Not recommended.
 # $plugin['allow_html_help'] = 1;
 
-$plugin["version"] = "0.2.3";
+$plugin["version"] = "0.2.4";
 $plugin["author"] = "jcr / txpbuilders";
 $plugin["author_uri"] = "http://txp.builders";
 $plugin["description"] = "Adds multiple custom fields to the links panel";
@@ -165,7 +165,7 @@ class jcr_link_custom
                 }
 
                 // Upgrade: Migrate from NULL to '' default value
-                $has_nulls = safe_rows_start("*", "txp_link","`jcr_link_custom_1` IS NULL OR `jcr_link_custom_2` IS NULLOR `jcr_link_custom_3` IS NULL OR `jcr_link_custom_4` ISNULL OR `jcr_link_custom_5` IS NULL");
+                $has_nulls = safe_rows_start("*", "txp_link","`jcr_link_custom_1` IS NULL OR `jcr_link_custom_2` IS NULL OR `jcr_link_custom_3` IS NULL OR `jcr_link_custom_4` IS NULL OR `jcr_link_custom_5` IS NULL");
                 if (@numRows($has_nulls) > 0) {
                     safe_update("txp_link", "jcr_link_custom_1 = ''", "jcr_link_custom_1 IS NULL");
                     safe_update("txp_link", "jcr_link_custom_2 = ''", "jcr_link_custom_2 IS NULL");
